@@ -38,7 +38,7 @@ module_kMEs <- function(object) {
 #' @return ggplot object 
 #' @export
 #' @importFrom ggplot2 aes autoplot facet_wrap geom_abline geom_point ggplot ggtitle
-#'             scale_color_manual
+#'             scale_color_manual element_text
 #' @importFrom dplyr arrange count desc
 #' @importFrom rlang .data
 #' @rdname module_kMEs
@@ -67,7 +67,9 @@ ggplot_module_kMEs <- function(object, x, y,
     ggplot2::geom_point(shape = 1) +
     ggplot2::scale_color_manual(values = modcolors) +
     ggplot2::facet_wrap(~ .data[[ycol]]) +
-    ggplot2::ggtitle(title)
+    ggplot2::ggtitle(title) +
+    ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+  
   
 }
 
