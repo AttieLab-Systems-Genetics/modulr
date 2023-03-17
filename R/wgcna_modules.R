@@ -18,19 +18,15 @@ wgcnaModules <- function(object, params = NULL) {
   # Pivot object to have traits in columns and ID in rownames.
   object <- wgcna_pivot(object)
   
+  ID <- object$ID
+  object <- object$matrix
+  
   # Check and assign parameters
   params <- wgcna_params(params)
   
   # Topological overlap (TOM)
-  dissTOM <- 
-    1 - WGCNA::TOMsimilarity(
-      WGCNA::adjacency(
-        object, 
-        type = params$signType,
-        power = params$power), 
-      TOMType = params$signType,
-      verbose = params$verbose)
-  
+  dissTOM <- wgcna_dist(object, params)
+
   # hierarchical cluster
   geneTree <- fastcluster::hclust(
     as.dist(dissTOM), 
@@ -69,20 +65,28 @@ wgcnaModules <- function(object, params = NULL) {
   kME <- WGCNA::signedKME(object, eigen)
   kME <-
     # Left join with trait names and colors to extract kME value.
-    left_join(
-      tibble(trait = row.names(kME),
-             module = colors),
-      # Pivot kME to long form 
-      kME %>%
-        mutate(trait = row.names(kME)) %>%
-        pivot_longer(-trait, names_to = "module", values_to = "kME") %>%
-        mutate(module = str_remove(module, "^kME")),
-      by = c("trait", "module"))
+    module_factors(
+      dplyr::left_join(
+        dplyr::tibble(
+          trait = row.names(kME),
+          module = colors),
+        # Pivot kME to long form 
+        dplyr::mutate(
+          tidyr::pivot_longer(
+            dplyr::mutate(
+              kME,
+              trait = row.names(kME)),
+            -trait,
+            names_to = "module", values_to = "kME"),
+          module = str_remove(module, "^kME")),
+        by = c("trait", "module")),
+      "module")
 
   names(eigen) <- stringr::str_remove(names(eigen), "^ME")
+  eigen <- eigen[levels(kME$module)]
   
   out <- list(
-    dissTOM = dissTOM,
+    ID = ID,
     geneTree = geneTree,
     eigen = eigen,
     modules = kME)
@@ -90,11 +94,99 @@ wgcnaModules <- function(object, params = NULL) {
   class(out) <- c("wgcnaModules", class(out))
   out
 }
+#' Create List of WGCNA Modules
+#'
+#' @param traitData data frame from `foundr::traitData()`
+#' @param traitSignal data frame from `foundr::partition()`
+#'
+#' @return object of class `listof_wgcnaModules`
+#' @export
+#' @importFrom foundr calc_ind_signal
+#' 
+#' @rdname wgcnaModules
+#'
+listof_wgcnaModules <- function(traitData, traitSignal) {
+  out <- list(
+    individual = wgcnaModules(traitData),
+    cellmean   = wgcnaModules(traitSignal %>%
+                                rename(value = "cellmean") %>%
+                                select(-signal)),
+    signal     = wgcnaModules(traitSignal %>%
+                                rename(value = "signal") %>%
+                                select(-cellmean)),
+    ind_signal = wgcnaModules(foundr::calc_ind_signal(traitData, traitSignal) %>%
+                                select(-signal)))
+  class(out) <- c("listof_wgcnaModules", class(out))
+  out  
+}
+#' Summary of List of WGCNA Modules
+#'
+#' @param object object of class `listof_wgcnaModules`
+#' @param ... additional parameters
+#'
+#' @return data frame
+#' @export
+#' @importFrom dplyr bind_rows
+#' @importFrom purrr map set_names
+#' 
+#' @rdname wgcnaModules
+#' @method summary listof_wgcnaModules
+#'
+summary.listof_wgcnaModules <- function(object, ...) {
+  dplyr::bind_rows(
+    purrr::set_names(
+      purrr::map(
+        names(object),
+        function(x) summary(object[[x]])),
+      names(object)),
+    .id = "response")
+}
+
+wgcna_dist <- function(object, params) {
+  
+  # Pivot object to have traits in columns and ID in rownames.
+  if(!is.matrix(object))
+    object <- wgcna_pivot(object)$matrix
+  
+  # Check and assign parameters
+  params <- wgcna_params(params)
+  
+  # Topological overlap (TOM)
+  1 - WGCNA::TOMsimilarity(
+    WGCNA::adjacency(
+      object, 
+      type = params$signType,
+      power = params$power), 
+    TOMType = params$signType,
+    verbose = params$verbose)
+}
 
 wgcna_pivot <- function(object) {
   # Pivot object
-  IDcols <- c("dataset", "strain", "sex", "animal", "condition")
-  IDcols <- IDcols[IDcols %in% names(object)]
+  IDcols <- c("dataset", "strain", "sex", "condition")
+  m <- match(IDcols, names(object), nomatch = 0)
+  IDcols <- IDcols[m > 0]
+  
+  if("animal" %in% names(object)) {
+    IDobj <- 
+      dplyr::arrange(
+        dplyr::distinct(
+          tidyr::unite(
+            object,
+            ID, tidyr::all_of(IDcols)),
+          ID, animal),
+        ID, animal)
+    IDcols <- c(IDcols, "animal")
+  } else {
+    IDobj <- 
+      dplyr::arrange(
+        dplyr::distinct(
+          tidyr::unite(
+            object,
+            ID, tidyr::all_of(IDcols)),
+          ID),
+        ID)
+  }
   
   object <- 
     as.data.frame(
@@ -104,8 +196,10 @@ wgcna_pivot <- function(object) {
           ID, tidyr::all_of(IDcols)),
         names_from = "trait", values_from = "value"))
   
-  rownames(object) <- object$animalID
-  as.matrix(object[,-1])
+  rownames(object) <- object$ID
+  list(
+    matrix = as.matrix(object[,-1]),
+    ID = IDobj)
 }
 
 wgcna_params <- function(params = NULL) {
@@ -127,8 +221,8 @@ wgcna_params <- function(params = NULL) {
     if(is.null(params[[i]]))
       params[[i]] <- defaults[[i]]
   }
-  if(!(params$type %in% c("unsigned","signed")))
-    params$type <- "unsigned"
+  if(!(params$signType %in% c("unsigned","signed")))
+    params$signType <- "unsigned"
 
   params
 }
@@ -144,7 +238,9 @@ summary_wgcnaModules <- function(object, ...) {
     dplyr::ungroup(
       dplyr::summarize(
         dplyr::group_by(
-          object$modules,
+          dplyr::mutate(
+            object$modules,
+            module = as.character(module)),
           module),
         count = dplyr::n(),
         maxkME = signif(max(kME), 4),
