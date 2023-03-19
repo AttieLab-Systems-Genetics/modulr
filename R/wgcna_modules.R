@@ -12,6 +12,7 @@
 #' @importFrom WGCNA adjacency labels2colors TOMsimilarity
 #' @importFrom fastcluster hclust
 #' @importFrom dynamicTreeCut cutreeDynamic
+#' @importFrom stringr str_remove
 #'
 wgcnaModules <- function(object, params = NULL) {
 
@@ -78,7 +79,7 @@ wgcnaModules <- function(object, params = NULL) {
               trait = row.names(kME)),
             -trait,
             names_to = "module", values_to = "kME"),
-          module = str_remove(module, "^kME")),
+          module = stringr::str_remove(module, "^kME")),
         by = c("trait", "module")),
       "module")
 
@@ -101,160 +102,46 @@ wgcnaModules <- function(object, params = NULL) {
 #'
 #' @return object of class `listof_wgcnaModules`
 #' @export
-#' @importFrom foundr calc_ind_signal
+#' @importFrom foundr join_signal
+#' @importFrom dplyr rename select
 #' 
 #' @rdname wgcnaModules
 #'
 listof_wgcnaModules <- function(traitData, traitSignal) {
   out <- list(
     individual = wgcnaModules(traitData),
-    cellmean   = wgcnaModules(traitSignal %>%
-                                rename(value = "cellmean") %>%
-                                select(-signal)),
-    signal     = wgcnaModules(traitSignal %>%
-                                rename(value = "signal") %>%
-                                select(-cellmean)),
-    ind_signal = wgcnaModules(foundr::calc_ind_signal(traitData, traitSignal) %>%
-                                select(-signal)))
+    cellmean   = wgcnaModules(
+      dplyr::select(
+        dplyr::rename(traitSignal, value = "cellmean"),
+        -signal)),
+    signal     = wgcnaModules(
+      dplyr::select(
+        dplyr::rename(traitSignal, value = "signal"),
+        -cellmean)),
+    rest       = wgcnaModules(
+        foundr::join_signal(
+          traitData,
+          traitSignal,
+          "rest")),
+    noise      = wgcnaModules(
+      foundr::join_signal(
+        traitData,
+        traitSignal,
+        "noise")),
+    ind_signal = wgcnaModules(
+      dplyr::select(
+        foundr::join_signal(
+          traitData,
+          traitSignal,
+          "ind_signal"),
+        -signal)))
   class(out) <- c("listof_wgcnaModules", class(out))
   out  
 }
-#' Summary of List of WGCNA Modules
-#'
-#' @param object object of class `listof_wgcnaModules`
-#' @param ... additional parameters
-#'
-#' @return data frame
 #' @export
-#' @importFrom dplyr bind_rows
-#' @importFrom purrr map set_names
+#' @rdname wgcnaModules
+#' @importFrom WGCNA plotDendroAndColors
 #' 
-#' @rdname wgcnaModules
-#' @method summary listof_wgcnaModules
-#'
-summary.listof_wgcnaModules <- function(object, ...) {
-  dplyr::bind_rows(
-    purrr::set_names(
-      purrr::map(
-        names(object),
-        function(x) summary(object[[x]])),
-      names(object)),
-    .id = "response")
-}
-
-wgcna_dist <- function(object, params) {
-  
-  # Pivot object to have traits in columns and ID in rownames.
-  if(!is.matrix(object))
-    object <- wgcna_pivot(object)$matrix
-  
-  # Check and assign parameters
-  params <- wgcna_params(params)
-  
-  # Topological overlap (TOM)
-  1 - WGCNA::TOMsimilarity(
-    WGCNA::adjacency(
-      object, 
-      type = params$signType,
-      power = params$power), 
-    TOMType = params$signType,
-    verbose = params$verbose)
-}
-
-wgcna_pivot <- function(object) {
-  # Pivot object
-  IDcols <- c("dataset", "strain", "sex", "condition")
-  m <- match(IDcols, names(object), nomatch = 0)
-  IDcols <- IDcols[m > 0]
-  
-  if("animal" %in% names(object)) {
-    IDobj <- 
-      dplyr::arrange(
-        dplyr::distinct(
-          tidyr::unite(
-            object,
-            ID, tidyr::all_of(IDcols)),
-          ID, animal),
-        ID, animal)
-    IDcols <- c(IDcols, "animal")
-  } else {
-    IDobj <- 
-      dplyr::arrange(
-        dplyr::distinct(
-          tidyr::unite(
-            object,
-            ID, tidyr::all_of(IDcols)),
-          ID),
-        ID)
-  }
-  
-  object <- 
-    as.data.frame(
-      tidyr::pivot_wider(
-        tidyr::unite(
-          object,
-          ID, tidyr::all_of(IDcols)),
-        names_from = "trait", values_from = "value"))
-  
-  rownames(object) <- object$ID
-  list(
-    matrix = as.matrix(object[,-1]),
-    ID = IDobj)
-}
-
-wgcna_params <- function(params = NULL) {
-  defaults <- list(
-    signType = "unsigned",
-    power = 6, 
-    minSize = 20,
-    method = "average",
-    cutHeight = 0.995,
-    split = 2,
-    thresholdKME = 0.365,
-    thresholdMEDiss = 0.25,
-    verbose = 0
-  )
-  if(is.null(params))
-    return(defaults)
-  
-  for(i in names(defaults)) {
-    if(is.null(params[[i]]))
-      params[[i]] <- defaults[[i]]
-  }
-  if(!(params$signType %in% c("unsigned","signed")))
-    params$signType <- "unsigned"
-
-  params
-}
-
-#' @param object,x object of class `wgcnaModules`
-#' @param main title for plot
-#' @param ... additional parameters
-
-#' @export
-#' @rdname wgcnaModules
-summary_wgcnaModules <- function(object, ...) {
-  dplyr::arrange(
-    dplyr::ungroup(
-      dplyr::summarize(
-        dplyr::group_by(
-          dplyr::mutate(
-            object$modules,
-            module = as.character(module)),
-          module),
-        count = dplyr::n(),
-        maxkME = signif(max(kME), 4),
-        minkME = signif(min(kME), 4))),
-    dplyr::desc(count))
-}
-#' @export
-#' @rdname wgcnaModules
-#' @method summary wgcnaModules
-summary.wgcnaModules <- function(object, ...)
-  summary_wgcnaModules(object, ...)
-
-#' @export
-#' @rdname wgcnaModules
 plot_wgcnaModules <- function(x,
                               main = "Gene dendrogram and module colors",
                               ...) {

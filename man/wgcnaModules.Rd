@@ -5,9 +5,6 @@
 \alias{autoplot.wgcnaModules}
 \alias{wgcnaModules}
 \alias{listof_wgcnaModules}
-\alias{summary.listof_wgcnaModules}
-\alias{summary_wgcnaModules}
-\alias{summary.wgcnaModules}
 \alias{plot_wgcnaModules}
 \alias{plot.wgcnaModules}
 \title{GGplot of WGCNA Modules}
@@ -20,30 +17,22 @@ wgcnaModules(object, params = NULL)
 
 listof_wgcnaModules(traitData, traitSignal)
 
-\method{summary}{listof_wgcnaModules}(object, ...)
-
-summary_wgcnaModules(object, ...)
-
-\method{summary}{wgcnaModules}(object, ...)
-
 plot_wgcnaModules(x, main = "Gene dendrogram and module colors", ...)
 
 \method{plot}{wgcnaModules}(x, ...)
 }
 \arguments{
-\item{object}{object of class `listof_wgcnaModules`}
+\item{object}{harmonized data frame from routine `foundr`}
 
-\item{main}{title for plot}
+\item{main}{title of plot}
 
-\item{...}{additional parameters}
+\item{...}{}
 
 \item{params}{list of parameters for WGCNA routines}
 
 \item{traitData}{data frame from `foundr::traitData()`}
 
 \item{traitSignal}{data frame from `foundr::partition()`}
-
-\item{object, x}{object of class `wgcnaModules`}
 }
 \value{
 ggplot2 object
@@ -53,8 +42,6 @@ ggplot2 object
 object of class wgcnaModules
 
 object of class `listof_wgcnaModules`
-
-data frame
 }
 \description{
 Data in `object` are assumed to be in long format with columns

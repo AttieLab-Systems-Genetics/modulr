@@ -64,7 +64,7 @@ ggplot_DendroAndColors <- function (dendro, colors, groupLabels = NULL, rowText 
     
     p1 <- ggdendro::ggdendrogram(dendro, labels = dendroLabels, size = cex.dendroLabels, 
         ...) +
-      ggplot2::ylim(c(0.1,1)) # This causes message; how to pass as arg?
+      ggplot2::ylim(c(hang, 1)) # This causes message; how to pass as arg?
 
     if (!is.null(abHeight)) 
       p1 <- p1 + ggplot2::geom_hline(yintercept = abHeight, col = abCol)
