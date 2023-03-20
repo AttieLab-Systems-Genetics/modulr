@@ -127,14 +127,7 @@ listof_wgcnaModules <- function(traitData, traitSignal) {
       foundr::join_signal(
         traitData,
         traitSignal,
-        "noise")),
-    ind_signal = wgcnaModules(
-      dplyr::select(
-        foundr::join_signal(
-          traitData,
-          traitSignal,
-          "ind_signal"),
-        -signal)))
+        "noise")))
   class(out) <- c("listof_wgcnaModules", class(out))
   out  
 }
