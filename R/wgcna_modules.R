@@ -109,7 +109,7 @@ wgcnaModules <- function(object, params = NULL) {
 #'
 listof_wgcnaModules <- function(traitData, traitSignal) {
   out <- list(
-    individual = wgcnaModules(traitData),
+    value      = wgcnaModules(traitData),
     cellmean   = wgcnaModules(
       dplyr::select(
         dplyr::rename(traitSignal, value = "cellmean"),
