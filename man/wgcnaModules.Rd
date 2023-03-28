@@ -9,7 +9,7 @@
 \usage{
 wgcnaModules(object, params = NULL)
 
-listof_wgcnaModules(traitData, traitSignal)
+listof_wgcnaModules(traitData, traitSignal, params = NULL)
 
 plot_wgcnaModules(x, main = "Gene dendrogram and module colors", ...)
 

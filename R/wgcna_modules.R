@@ -93,12 +93,14 @@ wgcnaModules <- function(object, params = NULL) {
     modules = kME)
   
   class(out) <- c("wgcnaModules", class(out))
+  attr(out, "params") <- params
   out
 }
 #' Create List of WGCNA Modules
 #'
 #' @param traitData data frame from `foundr::traitData()`
 #' @param traitSignal data frame from `foundr::partition()`
+#' @param params list of parameters for WGCNA routines
 #'
 #' @return object of class `listof_wgcnaModules`
 #' @export
@@ -107,29 +109,34 @@ wgcnaModules <- function(object, params = NULL) {
 #' 
 #' @rdname wgcnaModules
 #'
-listof_wgcnaModules <- function(traitData, traitSignal) {
+listof_wgcnaModules <- function(traitData, traitSignal, params = NULL) {
   out <- list(
-    value      = wgcnaModules(traitData),
+    value      = wgcnaModules(traitData, params),
     cellmean   = wgcnaModules(
       dplyr::select(
         dplyr::rename(traitSignal, value = "cellmean"),
-        -signal)),
+        -signal),
+      params),
     signal     = wgcnaModules(
       dplyr::select(
         dplyr::rename(traitSignal, value = "signal"),
-        -cellmean)),
+        -cellmean),
+      params),
     rest       = wgcnaModules(
         foundr::join_signal(
           traitData,
           traitSignal,
-          "rest")),
+          "rest"),
+        params),
     noise      = wgcnaModules(
       foundr::join_signal(
         traitData,
         traitSignal,
-        "noise")))
+        "noise"),
+      params))
   class(out) <- c("listof_wgcnaModules", class(out))
-  out  
+  attr(out, "params") <- attr(out[[1]], "params")
+  out
 }
 #' @export
 #' @rdname wgcnaModules
