@@ -29,13 +29,13 @@ wgcnaModules <- function(object, params = NULL) {
   dissTOM <- wgcna_dist(object, params)
 
   # hierarchical cluster
-  geneTree <- fastcluster::hclust(
+  dendro <- fastcluster::hclust(
     as.dist(dissTOM), 
     method = params$method)
   
   # Create modules
   mods <- dynamicTreeCut::cutreeDynamic(
-    dendro = geneTree,
+    dendro = dendro,
     cutHeight = params$cutHeight,
     distM = dissTOM,
     deepSplit = params$split,
@@ -62,33 +62,17 @@ wgcnaModules <- function(object, params = NULL) {
   colors <- merge$colors
   eigen <- merge$newMEs
 
-  # determine kMEs
-  kME <- WGCNA::signedKME(object, eigen)
-  kME <-
-    # Left join with trait names and colors to extract kME value.
-    module_factors(
-      dplyr::left_join(
-        dplyr::tibble(
-          trait = row.names(kME),
-          module = colors),
-        # Pivot kME to long form 
-        dplyr::mutate(
-          tidyr::pivot_longer(
-            dplyr::mutate(
-              kME,
-              trait = row.names(kME)),
-            -trait,
-            names_to = "module", values_to = "kME"),
-          module = stringr::str_remove(module, "^kME")),
-        by = c("trait", "module")),
-      "module")
+  # determine `kME` and add color by `module`.
+  kME <- module_factors(
+    WGCNA::signedKME(object, eigen),
+    colors)
 
   names(eigen) <- stringr::str_remove(names(eigen), "^ME")
   eigen <- eigen[levels(kME$module)]
   
   out <- list(
     ID = ID,
-    geneTree = geneTree,
+    dendro = dendro,
     eigen = eigen,
     modules = kME)
   
@@ -96,6 +80,9 @@ wgcnaModules <- function(object, params = NULL) {
   attr(out, "params") <- params
   out
 }
+
+
+
 #' Create List of WGCNA Modules
 #'
 #' @param traitData data frame from `foundr::traitData()`
@@ -146,7 +133,7 @@ plot_wgcnaModules <- function(x,
                               main = "Gene dendrogram and module colors",
                               ...) {
   WGCNA::plotDendroAndColors(
-    x$geneTree,
+    x$dendro,
     x$modules$module,
     "Dynamic Tree Cut",
     dendroLabels = FALSE, hang = 0.03,

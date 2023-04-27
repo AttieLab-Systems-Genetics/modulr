@@ -8,32 +8,12 @@
 #' @importFrom tidyr all_of unite
 wgcna_pivot <- function(object) {
   # Pivot object
-  IDcols <- c("dataset", "strain", "sex", "condition")
+  IDcols <- c("dataset", "strain", "sex", "condition", "animal")
   m <- match(IDcols, names(object), nomatch = 0)
   IDcols <- IDcols[m > 0]
   
-  IDobj <-
-    tidyr::unite(
-      object,
-      ID, tidyr::all_of(IDcols))
-  
-  if("animal" %in% names(object)) {
-    IDobj <- 
-      dplyr::arrange(
-        dplyr::distinct(
-          IDobj,
-          ID, animal),
-        ID, animal)
-    IDcols <- c(IDcols, "animal")
-  } else {
-    IDobj <- 
-      dplyr::arrange(
-        dplyr::distinct(
-          IDobj,
-          ID),
-        ID)
-  }
-  
+  IDobj <- wgcna_ID(object)
+
   object <- 
     as.data.frame(
       tidyr::pivot_wider(
