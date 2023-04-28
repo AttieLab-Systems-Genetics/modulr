@@ -11,6 +11,9 @@
 #' @importFrom rlang .data
 #'
 wgcna_ID <- function(object, condition_under = TRUE) {
+  # ID returned is data frame with ID = strain_sex_condition and
+  # animal as separate column.
+  
   if(inherits(object, "wgcnaModules"))
     wgnca_ID_object(object)
   else
@@ -18,12 +21,17 @@ wgcna_ID <- function(object, condition_under = TRUE) {
 }
 
 # ID data frame from eigentraits rownames
+# This assumes animal names of form strain.animal_sex_condition.
+# Some objects have strain_animal, and need Annotation table to get sex, condition.
+# Strain for 129 is nonstandard: X129 or A129
 wgcna_ID_ME <- function(MEs, condition_under = TRUE) {
   IDobj <- dplyr::tibble(ID = rownames(MEs))
   if(condition_under) {
+    # Condition has one underscore (and is last on name).
+    # Replace underscore (for now) with colon (:).
     IDobj <- dplyr::mutate(
       IDobj,
-      ID = stringr::str_replace(.data$ID, "_([A-Z]+)$", ":\\1"))
+      ID = stringr::str_replace(.data$ID, "_([A-Z0-9]+)$", ":\\1"))
   }
   # Change "." after strain to "_"
   IDobj <- dplyr::mutate(
@@ -40,11 +48,11 @@ wgcna_ID_ME <- function(MEs, condition_under = TRUE) {
           ID,
           delim = "_",
           names = IDcols),
-        strain = ifelse(.data$strain == "X129", "129", strain)),
+        strain = ifelse(.data$strain %in% c("A129", "X129"), "129", strain)),
       ID,
       strain, sex, condition)
   
-  # Change back
+  # Change colon (:) back to underscore.
   if(condition_under) {
     IDobj <- dplyr::mutate(
       IDobj,
