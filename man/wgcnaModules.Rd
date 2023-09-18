@@ -7,9 +7,9 @@
 \alias{plot.wgcnaModules}
 \title{Create WGCNA Modules}
 \usage{
-wgcnaModules(object, params = NULL)
+wgcnaModules(object, params = NULL, ...)
 
-listof_wgcnaModules(traitData, traitSignal, params = NULL)
+listof_wgcnaModules(traitContr, params = NULL)
 
 plot_wgcnaModules(x, main = "Gene dendrogram and module colors", ...)
 
@@ -19,6 +19,8 @@ plot_wgcnaModules(x, main = "Gene dendrogram and module colors", ...)
 \item{object}{harmonized data frame from routine `foundr`}
 
 \item{params}{list of parameters for WGCNA routines}
+
+\item{...}{additional parameters}
 
 \item{traitData}{data frame from `foundr::traitData()`}
 

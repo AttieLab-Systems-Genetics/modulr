@@ -5,6 +5,7 @@
 #' 
 #' @param object harmonized data frame from routine `foundr`
 #' @param params list of parameters for WGCNA routines
+#' @param ... additional parameters
 #'
 #' @return object of class wgcnaModules
 #' 
@@ -14,10 +15,10 @@
 #' @importFrom dynamicTreeCut cutreeDynamic
 #' @importFrom stringr str_remove
 #'
-wgcnaModules <- function(object, params = NULL) {
+wgcnaModules <- function(object, params = NULL, ...) {
 
   # Pivot object to have traits in columns and ID in rownames.
-  object <- wgcna_pivot(object)
+  object <- wgcna_pivot(object, ...)
   
   ID <- object$ID
   object <- object$matrix
@@ -93,10 +94,19 @@ wgcnaModules <- function(object, params = NULL) {
 #' @export
 #' @importFrom foundr join_signal
 #' @importFrom dplyr rename select
+#' @importFrom purrr map
 #' 
 #' @rdname wgcnaModules
 #'
-listof_wgcnaModules <- function(traitData, traitSignal, params = NULL) {
+listof_wgcnaModules <- function(traitContr, params = NULL) {
+  out <- purrr::map(split(traitContr, traitContr$sex),
+                    wgcnaModules, params)
+
+  class(out) <- c("listof_wgcnaModules", class(out))
+  attr(out, "params") <- attr(out[[1]], "params")
+  out
+}
+old_listof_wgcnaModules <- function(traitData, traitSignal, params = NULL) {
   out <- list(
     value      = wgcnaModules(traitData, params),
     cellmean   = wgcnaModules(
@@ -110,11 +120,11 @@ listof_wgcnaModules <- function(traitData, traitSignal, params = NULL) {
         -cellmean),
       params),
     rest       = wgcnaModules(
-        foundr::join_signal(
-          traitData,
-          traitSignal,
-          "rest"),
-        params),
+      foundr::join_signal(
+        traitData,
+        traitSignal,
+        "rest"),
+      params),
     noise      = wgcnaModules(
       foundr::join_signal(
         traitData,

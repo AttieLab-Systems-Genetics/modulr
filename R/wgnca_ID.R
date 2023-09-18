@@ -14,8 +14,8 @@ wgcna_ID <- function(object, condition_under = TRUE) {
   # ID returned is data frame with ID = strain_sex_condition and
   # animal as separate column.
   
-  if(inherits(object, "wgcnaModules"))
-    wgnca_ID_object(object)
+  if(inherits(object, "wgcnaModules") | inherits(object, "tbl_df"))
+    wgcna_ID_object(object)
   else
     wgcna_ID_ME(object, condition_under)
 }
@@ -73,7 +73,7 @@ wgcna_ID_object <- function(object) {
   IDobj <-
     tidyr::unite(
       object,
-      ID, tidyr::all_of(IDcols))
+      ID, tidyr::any_of(IDcols))
   
   # Add column for `animal` if present.
   if("animal" %in% names(object)) {

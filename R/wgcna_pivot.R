@@ -5,7 +5,7 @@
 #' @return pivoted object in wide format for WGCNA routines
 #' @export
 #' @importFrom dplyr arrange distinct
-#' @importFrom tidyr all_of unite
+#' @importFrom tidyr any_of unite
 wgcna_pivot <- function(object) {
   # Pivot object
   IDcols <- c("dataset", "strain", "sex", "condition", "animal")
@@ -19,7 +19,7 @@ wgcna_pivot <- function(object) {
       tidyr::pivot_wider(
         tidyr::unite(
           object,
-          ID, tidyr::all_of(IDcols)),
+          ID, tidyr::any_of(IDcols)),
         names_from = "trait", values_from = "value"))
   
   rownames(object) <- object$ID
