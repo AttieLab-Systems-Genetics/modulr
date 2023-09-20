@@ -9,7 +9,7 @@
 #' @export
 #' @importFrom dplyr filter left_join mutate rename select
 #'
-eigen_compare <- function(object,
+eigen_traits <- function(object,
                           sexname = sexnames,
                           modulename,
                           contr_object,
@@ -59,5 +59,6 @@ eigen_compare <- function(object,
   class(object) <- c("conditionContrasts", class(object))
   attr(object, "conditions") <- attr(contr_object, "conditions")
   attr(object, "termname") <- attr(contr_object, "termname")
+  attr(object, "datatype") <- "eigen"
   object
 }
