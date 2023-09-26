@@ -15,11 +15,11 @@ eigen_traits(
 \arguments{
 \item{object}{module list object}
 
-\item{sexname}{name of sex}
+\item{sexname}{name of sex combination}
 
-\item{modulename}{}
+\item{modulename}{name of module to examine}
 
-\item{contr_object}{}
+\item{contr_object}{contrast object from `conditionContrasts()`}
 }
 \value{
 data frame

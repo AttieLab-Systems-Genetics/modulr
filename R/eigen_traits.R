@@ -1,13 +1,14 @@
 #' Compare Eigen Traits with Original Traits
 #'
 #' @param object module list object
-#' @param sexname name of sex
-#' @param modulename 
-#' @param contr_object 
+#' @param sexname name of sex combination
+#' @param modulename name of module to examine
+#' @param contr_object contrast object from `conditionContrasts()`
 #'
 #' @return data frame
 #' @export
-#' @importFrom dplyr filter left_join mutate rename select
+#' @importFrom dplyr bind_rows filter left_join mutate rename select
+#' @importFrom stats reorder
 #'
 eigen_traits <- function(object,
                           sexname = sexnames,
@@ -15,50 +16,48 @@ eigen_traits <- function(object,
                           contr_object,
                           eigen_object = eigen_contrast(object, contr_object)) {
   
-  eigen_object$p.value <- 1e-10
+  # Get `modules` from `object` and filter to `modulename`. 
+  module_object <- 
+    dplyr::select(
+      dplyr::filter(
+        object[[sexname]]$modules,
+        .data$module == modulename),
+      -module)
   
-  object <- dplyr::filter(
-    object[[sexname]]$modules,
-    .data$module == modulename)
+  # Join contrast object with module object.
+  # Replacing `p.value` by module `kME`.
+  object <- dplyr::left_join(
+    # Filter contrast object to include module traits.
+    dplyr::filter(
+      # De-select `p.value` from contrast objects.
+      dplyr::select(contr_object, -p.value),
+      .data$sex == sexname,
+      .data$trait %in% module_object$trait),
+    module_object,
+    by = c("trait"))
   
+  # Bind eigen object information.
   object <- 
-    dplyr::mutate(
-      # Join contrast traits with `1 - |kME|` as p.value.
-      dplyr::left_join(
-        dplyr::mutate(
-          dplyr::select(
-            # Filter contrast object to include module traits.
-            dplyr::filter(
-              contr_object,
-              .data$sex == sexname,
-              .data$trait %in% object$trait),
-            -p.value),
-          trait = as.character(trait)),
-        dplyr::mutate(
-          dplyr::rename(
-            dplyr::select(object, -module),
-            p.value = "kME"),
-          p.value = 1 - abs(.data$p.value))),
-      trait = reorder(.data$trait, .data$p.value))
-  
-  object <- 
-    # Reorder traits to be in increasing `p.value` order.
+    # Reorder traits to be in increasing `kME` order.
     dplyr::mutate(
       dplyr::bind_rows(
       object,
-      # Make sure `p.value` for module is smaller than all others.
-      dplyr::mutate(
-        # Filter eigen object to `sex` and `module`.
-        dplyr::filter(
-          eigen_object,
-          .data$sex == sexname,
-          .data$trait == modulename),
-        p.value = min(object$p.value) / 10)),
-      trait = reorder(as.character(trait), p.value))
+      # Filter eigen object to get only `sex` and `module`.
+      # Set `kME` to 1 for eigentrait.
+      dplyr::select(
+        dplyr::mutate(
+          # Filter `eigen` object by `sex` and `module`.
+          dplyr::filter(
+            eigen_object,
+            .data$sex == sexname,
+            .data$trait == modulename),
+          kME = 1),
+        -sex, -module)),
+      trait = stats::reorder(as.character(.data$trait), -.data$kME))
   
   class(object) <- c("conditionContrasts", class(object))
   attr(object, "conditions") <- attr(contr_object, "conditions")
   attr(object, "termname") <- attr(contr_object, "termname")
-  attr(object, "datatype") <- "eigen"
+  attr(object, "ordername") <- "kME"
   object
 }

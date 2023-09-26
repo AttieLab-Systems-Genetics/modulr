@@ -13,16 +13,20 @@
 eigen_contrast <- function(object, contr_object) {
   object <- dplyr::mutate(
     dplyr::bind_rows(
+      # Make data frame of `eigen` matrix.
       purrr::map(purrr::transpose(object)$eigen, eigen_df)),
     trait = factor(.data$trait, unique(.data$trait)),
-    p.value = 10 ^ -match(.data$trait, rev(levels(.data$trait))))
+    module = match(.data$trait, levels(.data$trait)))
   
   class(object) <- c("conditionContrasts", class(object))
   attr(object, "conditions") <- attr(contr_object, "conditions")
   attr(object, "termname") <- attr(contr_object, "termname")
+  attr(object, "ordername") <- "module"
   object
 }
 eigen_df <- function(object) {
+  # Pivot `eigen` matrix into long data frame.
+  # Separate `dataset`, `strain` and `sex` into their own columns.
   tidyr::separate_wider_delim(
     tidyr::pivot_longer(
       tibble::rownames_to_column(object, "dataset_strain"),
