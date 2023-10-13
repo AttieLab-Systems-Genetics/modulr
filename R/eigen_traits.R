@@ -52,7 +52,7 @@ eigen_traits <- function(object,
             .data$sex == sexname,
             .data$trait == modulename),
           kME = 1),
-        -sex, -module)),
+        -module)),
       trait = stats::reorder(as.character(.data$trait), -.data$kME))
   
   class(object) <- c("conditionContrasts", class(object))

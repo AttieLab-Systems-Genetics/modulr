@@ -3,15 +3,17 @@
 #' @param object data frame
 #' @param powers vector of beta values
 #' @param verbose level of verbose messages
+#' @param cores number of cores to enable
 #' @param ... ignored
 #'
 #' @return data frame of class `wgcna_topology`
 #' @export
-#' @importFrom WGCNA pickSoftThreshold
+#' @importFrom WGCNA enableWGCNAThreads pickSoftThreshold
+#' @importFrom parallel detectCores
 #'
 wgcna_topology <- function(object,
                            powers = c(c(1:10), seq(from = 12, to=20, by=2)),
-                           verbose = 0, ...) {
+                           cores = parallel::detectCores(), verbose = 0, ...) {
   
   # Pivot object to have traits in columns and ID in rownames.
   object <- wgcna_pivot(object, ...)
@@ -19,6 +21,9 @@ wgcna_topology <- function(object,
   ID <- object$ID
   object <- object$matrix
 
+  # Enable mult-threading
+  WGCNA::enableWGCNAThreads(cores)
+  
   # Call the network topology analysis function
   out <- WGCNA::pickSoftThreshold(object, powerVector = powers,
                                   verbose = verbose)$fitIndices

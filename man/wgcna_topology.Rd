@@ -8,6 +8,7 @@
 wgcna_topology(
   object,
   powers = c(c(1:10), seq(from = 12, to = 20, by = 2)),
+  cores = parallel::detectCores(),
   verbose = 0,
   ...
 )
@@ -18,6 +19,8 @@ ggplot_wgcna_topology(object, cutoff = 0.9, ...)
 \item{object}{object of class}
 
 \item{powers}{vector of beta values}
+
+\item{cores}{number of cores to enable}
 
 \item{verbose}{level of verbose messages}
 

@@ -16,7 +16,8 @@ eigen_contrast <- function(object, contr_object) {
       # Make data frame of `eigen` matrix.
       purrr::map(purrr::transpose(object)$eigen, eigen_df)),
     trait = factor(.data$trait, unique(.data$trait)),
-    module = match(.data$trait, levels(.data$trait)))
+    module = match(.data$trait, levels(.data$trait)),
+    sex = factor(sex, levels(contr_object$sex)))
   
   class(object) <- c("conditionContrasts", class(object))
   attr(object, "conditions") <- attr(contr_object, "conditions")
