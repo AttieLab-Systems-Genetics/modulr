@@ -8,7 +8,7 @@ wgcna_params <- function(params = NULL) {
   defaults <- list(
     signType = "unsigned",
     power = 6, 
-    minSize = 20,
+    minSize = 4,
     method = "average",
     cutHeight = 0.995,
     split = 2,
