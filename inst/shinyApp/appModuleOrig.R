@@ -36,8 +36,7 @@ ui <- function() {
 }
 
 server <- function(input, output, session) {
-  # Related Datasets.
-  
+  # Datasets.
   output$dataset <- renderUI({
     datasets <- unique(traitStats$dataset)
     shiny::selectInput("dataset", "Datasets:", datasets, "LivMet",
@@ -91,7 +90,7 @@ server <- function(input, output, session) {
   eigens <- shiny::reactive({
     shiny::req(modules(), traitContrPval())
     
-    modulr::eigen_contrast(modules(), traitContrPval())
+    foundr::eigen_contrast(modules(), traitContrPval())
   })
   output$eigens <- shiny::renderUI({
     shiny::req(eigens(), input$sex)
@@ -118,7 +117,7 @@ server <- function(input, output, session) {
     shiny::req(modules(), input$sex, input$module,
                traitContrPval(), eigens())
     
-    modulr::eigen_traits(modules(), input$sex, input$module,
+    foundr::eigen_traits(modules(), input$sex, input$module,
                          traitContrPval(), eigens())
   })
   output$traits <- shiny::renderUI({
