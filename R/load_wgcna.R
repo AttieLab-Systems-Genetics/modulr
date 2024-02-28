@@ -4,6 +4,7 @@
 #' @param modobj name of module object, ending in `.Rdata` or `.RData`
 #' @param params non-default parameters for WGCNA (see `wgcna_params`)
 #' @param listof embed object as `listof_wgcnaModules` if `TRUE`
+#' @param annot annotation file (ignored if `NULL`)
 #'
 #' @return list object that has all WGCNA components
 #' @export
@@ -12,7 +13,8 @@ load_wgcna <- function(moddir, modobj = "WGCNA_objects_ms10.Rdata",
                        params = list(signType = "unsigned",
                                      power = 12, 
                                      minSize = 4),
-                       listof = TRUE) {
+                       listof = TRUE,
+                       annot = NULL) {
   # local() keeps loaded objects local.
   out <- local({
     load(file.path(moddir, modobj))
@@ -22,7 +24,7 @@ load_wgcna <- function(moddir, modobj = "WGCNA_objects_ms10.Rdata",
     params$cutHeight <- merge$cutHeight
     
     list(
-      ID = wgcna_ID(merge$newMEs),
+      ID = wgcna_ID(merge$newMEs, annot = annot),
       dendro = merge$dendro,
       eigen = merge$newMEs,
       modules = module_factors(kMEs, merge$colors),

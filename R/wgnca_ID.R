@@ -2,6 +2,7 @@
 #'
 #' @param object data frame containing ID information
 #' @param condition_under condition has embedded "_" if `TRUE`
+#' @param annot annotation file (ignored if `NULL`)
 #'
 #' @return data frame with column `ID` and optional column `animal`
 #' @export
@@ -10,22 +11,25 @@
 #' @importFrom stringr str_replace
 #' @importFrom rlang .data
 #'
-wgcna_ID <- function(object, condition_under = TRUE) {
+wgcna_ID <- function(object, condition_under = TRUE, annot = NULL) {
   # ID returned is data frame with ID = strain_sex_condition and
   # animal as separate column.
   
   if(inherits(object, "wgcnaModules") | inherits(object, "tbl_df"))
     wgcna_ID_object(object)
   else
-    wgcna_ID_ME(object, condition_under)
+    wgcna_ID_ME(object, condition_under, annot = annot)
 }
 
 # ID data frame from eigentraits rownames
 # This assumes animal names of form strain.animal_sex_condition.
 # Some objects have strain_animal, and need Annotation table to get sex, condition.
 # Strain for 129 is nonstandard: X129 or A129
-wgcna_ID_ME <- function(MEs, condition_under = TRUE) {
+wgcna_ID_ME <- function(MEs, condition_under = TRUE, annot = NULL) {
   IDobj <- dplyr::tibble(ID = rownames(MEs))
+  if(!is.null(annot))
+    return(wgcna_ID_annot(IDobj, annot))
+  
   if(condition_under) {
     # Condition has one underscore (and is last on name).
     # Replace underscore (for now) with colon (:).
@@ -60,6 +64,22 @@ wgcna_ID_ME <- function(MEs, condition_under = TRUE) {
   }
   
   IDobj
+}
+wgcna_ID_annot <- function(IDobj, annot = NULL) {
+  # Fix idiosyncracies in IDs.
+  IDobj <- dplyr::mutate(
+    IDobj,
+    ID = stringr::str_replace(.data$ID, "[XA]129", "129"),
+    ID = stringr::str_replace(.data$ID, "_", "-"))
+  
+  dplyr::left_join(
+    IDobj,
+    dplyr::rename(
+      dplyr::select(annot, c("mouse_id", "strain", "number", "sex", "diet")),
+      animal = "number",
+      ID = "mouse_id"),
+    by = "ID")
+  
 }
 
 # ID data frame from module object rownames

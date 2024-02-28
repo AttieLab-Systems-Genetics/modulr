@@ -8,7 +8,8 @@ load_wgcna(
   moddir,
   modobj = "WGCNA_objects_ms10.Rdata",
   params = list(signType = "unsigned", power = 12, minSize = 4),
-  listof = TRUE
+  listof = TRUE,
+  annot = NULL
 )
 }
 \arguments{
@@ -19,6 +20,8 @@ load_wgcna(
 \item{params}{non-default parameters for WGCNA (see `wgcna_params`)}
 
 \item{listof}{embed object as `listof_wgcnaModules` if `TRUE`}
+
+\item{annot}{annotation file (ignored if `NULL`)}
 }
 \value{
 list object that has all WGCNA components
