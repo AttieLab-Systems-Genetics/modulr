@@ -8,6 +8,8 @@
 #' @param modRdata file name ending with `.Rdata`
 #' @param params list of parameters
 #' @param annot annotation file (ignored if `NULL`)
+#' @param harmonizedir name of directory to save `RDS` object in its `moddir`
+#' @param force force creation if `TRUE`
 #'
 #' @return invisible file name for created object
 #' @export
@@ -15,7 +17,9 @@ wgcna_harmonize <- function(mod = "WGCNAmodule",
                             moddir = ".",
                             modRdata = NULL,
                             params = NULL,
-                            annot = NULL) {
+                            annot = NULL,
+                            harmonizeddir = ".",
+                            force = FALSE) {
   if(is.null(modRdata))
     return(NULL)
   
@@ -25,15 +29,17 @@ wgcna_harmonize <- function(mod = "WGCNAmodule",
       power = 12, 
       signType = "unsigned",
       minSize = 4)
-  if(is.null(params$signType))
-    params$signType <- "U"
+  paramcode <- params
+  if(is.null(paramcode$signType))
+    paramcode$signType <- "U"
   else
-    params$signType <- ifelse(params$signType == "unsigned", "U", "S")
+    paramcode$signType <- ifelse(paramcode$signType == "unsigned", "U", "S")
   
   modname <- paste0(mod, "Module")
   if(file.exists(
     filename <- file.path(harmonizeddir, mod,
-                          paste0(modname, "_", paste(params, collapse = ""), ".rds")))) {
+                          paste0(modname, "_", paste(paramcode, collapse = ""), ".rds"))) &
+    !force) {
     assign(modname, readRDS(filename))
   } else {
     assign(

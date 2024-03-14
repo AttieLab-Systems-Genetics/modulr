@@ -1,6 +1,6 @@
 Package: modulr
-Version: 0.3.0
-Date: 2024-02-28
+Version: 0.3.1
+Date: 2024-03-14
 Title: Trait Module Creation and Analysis
 Description: Wrappers for WGNCA module creation.
 Authors@R: c(person("Brian S Yandell",

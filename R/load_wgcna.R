@@ -15,6 +15,11 @@ load_wgcna <- function(moddir, modobj = "WGCNA_objects_ms10.Rdata",
                                      minSize = 4),
                        listof = TRUE,
                        annot = NULL) {
+  
+  dropME <- function(x) {
+    names(x) <- stringr::str_remove(names(x), "^ME")
+    x
+  }
   # local() keeps loaded objects local.
   out <- local({
     load(file.path(moddir, modobj))
@@ -26,13 +31,17 @@ load_wgcna <- function(moddir, modobj = "WGCNA_objects_ms10.Rdata",
     list(
       ID = wgcna_ID(merge$newMEs, annot = annot),
       dendro = merge$dendro,
-      eigen = merge$newMEs,
+      eigen = dropME(merge$newMEs),
       modules = module_factors(kMEs, merge$colors),
       params = wgcna_params(params))
   })
   
   # Put harmonized rownames in place.
-  rownames(out$eigen) <- tidyr::unite(out$ID, ID, ID, animal)$ID
+  if(is.null(annot)) {
+    rownames(out$eigen) <- tidyr::unite(out$ID, ID, ID, animal)$ID
+  } else {
+    rownames(out$eigen) <- tidyr::unite(out$ID, ID, strain, sex, diet, animal)$ID
+  }
   
   class(out) <- c("wgcnaModules", class(out))
   attr(out, "params") <- out$params

@@ -9,7 +9,9 @@ wgcna_harmonize(
   moddir = ".",
   modRdata = NULL,
   params = NULL,
-  annot = NULL
+  annot = NULL,
+  harmonizeddir = ".",
+  force = FALSE
 )
 }
 \arguments{
@@ -22,6 +24,10 @@ wgcna_harmonize(
 \item{params}{list of parameters}
 
 \item{annot}{annotation file (ignored if `NULL`)}
+
+\item{force}{force creation if `TRUE`}
+
+\item{harmonizedir}{name of directory to save `RDS` object in its `moddir`}
 }
 \value{
 invisible file name for created object
